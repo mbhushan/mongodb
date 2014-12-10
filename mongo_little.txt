@@ -38,3 +38,22 @@ db.createCollection('logs', {capped: true , size: 1048576})
 
 If you want to “expire” your data based on time rather than overall collection size, you can use TTL Indexes where TTL
 stands for “time-to-live”.
+
+
+CHAPTER-6 AGGREGATION
+============================
+Aggregation pipeline gives you a way to transform and combine documents in your collection
+db.unicorns.aggregate([{$group:{_id:'$gender', total: {$sum:1}}}])
+
+$sort and $limit in combination allow you to get answers to “top N” types of questions.
+MapReduce framework introduction?
+
+CHAPTER-7 Performance and Tools
+====================================
+Indexes: they help improve query and sorting performance. Indexes are created via ensureIndex
+db.unicorns.ensureIndex({name: 1});
+## And dropped via dropIndex :
+db.unicorns.dropIndex({name: 1});
+db.unicorns.ensureIndex({name: 1}, {unique: true });
+Indexes can be created on embedded fields (again, using the dot-notation) and on array fields. We can also create
+compound indexes:
