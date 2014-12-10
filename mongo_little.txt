@@ -1,0 +1,40 @@
+Mongo Notes
+===============
+The fact remains that data is relational, and MongoDB doesn’t support joins.
+
+MongoDB supports arrays as first class objects of a document. This is  
+when dealing with many-to-one or many-to-many relationships.
+arrays of values are much more convenient to deal with than many-to-many join-tables.
+
+embedded documents can be queried using a dot-notation:
+we can even embed arrays of documents: db.employees.insert({_id: ObjectId( “4d85c7039ab0fd70a117d73
+name: ‘Chani’, family: [ {relation:‘mother’,name: ‘Chani’}, {relation:‘father’,name: ‘Paul’}, {relation:‘brother’, name:
+‘Duncan’}]})
+
+Denormalization
+
+Arrays of ids can be a useful strategy when dealing with one-to-many or many-to-many scenarios.
+But more commonly, new developers are left deciding between using embedded documents versus doing “manual” referencing.
+you should know that an individual document is currently limited to 16 megabytes in size.
+MongoDB lets you query and index fields of an embedded documents and arrays.
+The only way you can go wrong is by not trying.
+
+Only you know whether the benefits of introducing a new solution outweigh the costs.
+
+CHAPTER-5 When to use MongoDB
+==============================
+
+An oft-touted benefit of document-oriented database is that they don’t enforce a fixed schema.
+Serialize it to JSON (technically BSON, but close enough) and send it to MongoDB. There is no property mapping or type mapping. 
+This straightforwardness definitely flows to you, the end developer.
+
+One area where MongoDB can fit a specialized role is in logging. There are two aspects of MongoDB which make writes
+quite fast. First, you have an option to send a write command and have it return immediately without waiting for the
+write to be acknowledged. Secondly, you can control the write behavior with respect to data durability.
+
+CAPPED COLLECTION:
+//limit our capped collection to 1 megabyte
+db.createCollection('logs', {capped: true , size: 1048576})
+
+If you want to “expire” your data based on time rather than overall collection size, you can use TTL Indexes where TTL
+stands for “time-to-live”.
