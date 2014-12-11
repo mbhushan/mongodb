@@ -1,0 +1,25 @@
+CHAPTER-1 Getting Started
+==========================
+The key differences between MongoDB’s document-oriented approach and a traditional relational database are:
+1. MongoDB does not support joins.
+2. MongoDB does not support transactions. It does have some support for atomic
+operations, however.
+3. MongoDB schemas are flexible. Not all documents in a collection must adhere to
+the same schema.
+
+
+CHAPTER-2 READING n WRITING to MONGO PYTHON
+============================================
+Table 2-1. Comparison of SQL/RDBMS and MongoDB Concepts and Terms
+Concept,     SQL         MongoDB
+One User,    One Row     One Document
+All Users,   Users Table Users Collection
+One Username Per User (1-to-1), Username Column, Username Property
+Many Emails Per User (1-to-many), SQL JOIN with Emails Table, Embed relevant email doc in User Document
+Many Items Owned by Many Users (many-to-many), SQL JOIN with Items Table, Programmatically Join with Items Collection
+Note that we don’t have to tell MongoDB to create our collection “users” before we insert to it.
+# dbh.usrs is a typo, we mean dbh.users! Unlike an RDBMS, MongoDB won't
+# protect you from this class of mistake.
+dbh.usrs.insert(user_doc)
+A MongoDB ObjectId is a
+96-bit value which is expected to have a very high probability of being unique when created.
