@@ -23,3 +23,48 @@ Note that we don’t have to tell MongoDB to create our collection “users” b
 dbh.usrs.insert(user_doc)
 A MongoDB ObjectId is a
 96-bit value which is expected to have a very high probability of being unique when created.
+By default, the PyMongo driver performs asynchronous writes. Write operations include insert, update, remove and findAndModify.
+one common example where asynchronous writes may make sense is when you are writing non-critical logs or analytics data to MongoDB from your application.
+# safe=True ensures that your write
+# will succeed or an exception will be thrown
+dbh.users.insert(user_doc, safe=True)
+pyMongo makes it easy to specify how many nodes you would like your write to be replicated to before returning success. 
+You simply set a parameter named “w” to the number of servers in each write method call.
+For example:
+# w=2 means the write will not succeed until it has
+# been written to at least 2 servers in a replica set.
+dbh.users.insert(user_doc, w=2)
+Note that passing any value of “w” to a write method in PyMongo implies setting “safe=True” also.
+Now imagine you wish to find all documents in the users collection which have a firstname property set to “jane” and print out their email addresses. MongoDB will return a Cursor object for us, to stream the results.
+
+# Return all user with firstname "jane" sorted
+# in descending order by birthdate (ie youngest first)
+users = dbh.users.find({"firstname":"jane"}).sort(("dateofbirth", pymongo.DESCENDING))
+for user in users:
+print user.get("email")
+
+# Return all user with firstname "jane" sorted
+# in descending order by birthdate (ie youngest first)
+users = dbh.users.find({"firstname":"jane"},
+sort=[("dateofbirth", pymongo.DESCENDING)])
+for user in users:
+print user.get("email")
+
+# Return at most 10 users sorted by score in descending order
+# This may be used as a "top 10 users highscore table"
+users = dbh.users.find().sort(("score", pymongo.DESCENDING)).limit(10)
+for user in users:
+print user.get("username"), user.get("score", 0)
+
+# Delete all documents in user collection
+dbh.users.remove(None, safe=True)
+# Delete all documents in user collection with score 1
+dbh.users.remove({"score":1}, safe=True)
+
+
+# even if every document in your collection has a score of 0,
+# only the first matched document will have its "flagged" property set to True.
+dbh.users.update({"score":0},{"$set":{"flagged":True}}, safe=True)
+# once we supply the "multi=True" parameter, all matched documents
+# will be updated
+dbh.users.update({"score":0},{"$set":{"flagged":True}}, multi=True, safe=True)
