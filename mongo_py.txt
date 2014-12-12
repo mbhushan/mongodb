@@ -68,3 +68,190 @@ dbh.users.update({"score":0},{"$set":{"flagged":True}}, safe=True)
 # once we supply the "multi=True" parameter, all matched documents
 # will be updated
 dbh.users.update({"score":0},{"$set":{"flagged":True}}, multi=True, safe=True)
+
+
+CHAPTER-3 COMMON MONGODB n PYTHON PATTERNS
+==================================================================================
+my_document = {
+"name":"foo document",
+"data":{"name":"bar document"}
+}
+
+user_doc = {
+"username":"foouser",
+"twitter":{
+"username":"footwitter",
+"password":"secret",
+"email":"twitter@example.com"
+},
+"facebook":{
+"username":"foofacebook",
+"password":"secret",
+"email":"facebook@example.com"
+},
+"irc":{
+"username":"fooirc",
+"password":"secret",
+}
+}
+
+user_doc = dbh.users.find_one({"facebook.username":"foofacebook"})
+# update modifiers such as $set also support the dot notation
+dbh.users.update({"facebook.username":"foofacebook"},
+{"$set":{"facebook.username":"bar"}}, safe=True)
+
+# A user document demonstrating one-to-many relationships using embedding
+# Here we map multiple email addresses (along with whether or not the email
+# is the user's primary email address) to a single user.
+user_doc = {
+"username":"foouser",
+"emails":[
+{
+"email":"foouser1@example.com",
+"primary":True
+},
+{
+"email":"foouser2@example2.com",
+"primary":False
+},
+{
+"email":"foouser3@example3.com",
+"primary":False
+}
+]
+}
+
+# A user document demonstrating one-to-many relationships using embedding
+user_doc = {
+"username":"foouser",
+"emails":[
+{
+"email":"foouser1@example.com",
+"primary":True
+},
+{
+"email":"foouser2@example2.com",
+"primary":False
+},
+{
+"email":"foouser3@example3.com",
+"primary":False
+}
+]
+}
+# Insert the user document
+dbh.users.insert(user_doc, safe=True)
+# Retrieve the just-inserted document via one of its many email addresses
+user_doc_result = dbh.users.find_one({"emails.email":"foouser1@example.com"})
+# Assert that the original user document and the query result are the same
+assert user_doc == user_doc_result
+
+
+
+# Naive method to remove an email address from a user document
+# Cumbersome and has a race condition
+user_doc = {
+"username":"foouser",
+"emails":[
+{
+"email":"foouser1@example.com",
+"primary":True
+},
+{
+"email":"foouser2@example2.com",
+"primary":False
+},
+{
+"email":"foouser3@example3.com",
+"primary":False
+}
+]
+}
+# Insert the user document
+dbh.users.insert(user_doc, safe=True)
+# Retrieve the just-inserted document via username
+user_doc_result = dbh.users.find_one({"username":"foouser"})
+# Remove the "foouser2@example2.com" email address sub-document from the embedded list
+del user_doc_result["emails"][1]
+# Now write the new emails property to the database
+# May cause data to be lost due to the race between read and write
+dbh.users.update({"username":"foouser"},{"$set":{"emails":user_doc_result}},
+safe=True)
+
+# Atomically remove an email address from a user document race-free using the
+# $pull update modifier
+user_doc = {
+"username":"foouser",
+"emails":[
+{
+"email":"foouser1@example.com",
+"primary":True
+},
+{
+"email":"foouser2@example2.com",
+"primary":False
+},
+{
+"email":"foouser3@example3.com",
+"primary":False
+}
+]
+}
+# Insert the user document
+dbh.users.insert(user_doc, safe=True)
+# Use $pull to atomically remove the "foouser2@example2.com" email sub-document
+dbh.users.update({"username":"foouser"},
+{"$pull":{"emails":{"email":"foouser2@example2.com"}}}, safe=True)
+
+# Use $pull to atomically remove all email sub-documents with primary not equal to True
+dbh.users.update({"username":"foouser"},
+{"$pull":{"emails":{"primary":{"$ne":True}}}, safe=True)
+
+The $push update modifier is used to atomically append an element to an array. At the
+time of writing, $push can only support adding items to the end of the array—there is
+no update modifier to add an element to the beginning of an array, or to insert it at an
+arbitrary index. $push is simple to use, because, unlike $pull , it does not take any field
+match or conditional arguments.
+
+# Use $push to atomically append a new email sub-document to the user document
+new_email = {"email":"fooemail4@exmaple4.com", "primary":False}
+dbh.users.update({"username":"foouser"},
+{"$push":{"emails":new_email}}, safe=True)
+
+# Demonstrate usage of the positional operator ($) to modify
+# matched sub-documents in-place.
+user_doc = {
+"username":"foouser",
+"emails":[
+{
+"email":"foouser1@example.com",
+"primary":True
+},
+{
+"email":"foouser2@example2.com",
+"primary":False
+},
+{
+"email":"foouser3@example3.com",
+"primary":False
+}
+]
+}
+# Insert the user document
+dbh.users.insert(user_doc, safe=True)
+# Now make the "foouser2@example2.com" email address primrary
+dbh.users.update({"emails.email":"foouser2@example2.com"},
+{"$set":{"emails.$.primary":True}}, safe=True)
+# Now make the "foouser1@example.com" email address not primary
+dbh.users.update({"emails.email":"foouser1@example.com {"$set":{"emails.$.primary":False}}, safe=True)
+
+Note that the $ operator cannot be used with upserts (see section on
+upserts later in this chapter) additionally it only works with the first
+matched element.
+
+The alternative to embedding is storing the documents in a separate collection and
+performing a join in your own application code, by querying twice or more. Usually
+many-to-many relationships are modeled in this way, while one-to-many relationships
+are embedded.
+
+
