@@ -254,4 +254,31 @@ performing a join in your own application code, by querying twice or more. Usual
 many-to-many relationships are modeled in this way, while one-to-many relationships
 are embedded.
 
+For example to create an index on the username property of a collection called users ,
+you could write the following:
+# Create index on username property
+dbh.users.create_index("username")
+To create a compound index, for example on the first_name and last_name, with an
+ascending direction, you could specify:
+# Create a compound index on first_name and last_name properties
+# with ascending index direction
+dbh.users.create_index([("first_name", pymongo.ASCENDING), ("last_name",
+pymongo.ASCENDING)])
+Indexes in MongoDB each have names. By default, MongoDB will generate a name,
+but you may wish to give a custom name—particularly for compound indexes where
+the generated names are not especially readable by humans. To give a custom name
+during creation, supply the name=<str> parameter to the create_index() method:
+# Create a compound index called "name_idx" on first_name and last_name properties
+# with ascending index direction
+dbh.users.create_index([
+("first_name", pymongo.ASCENDING),
+("last_name", pymongo.ASCENDING)
+],
+name="name_idx")
+
+pecify that an index should be built in the background, pass the background=True
+parameter to the create_index() method:
+# Create index in the background
+# Database remains usable
+dbh.users.create_index("username", background=True)
 
