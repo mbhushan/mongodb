@@ -282,3 +282,20 @@ parameter to the create_index() method:
 # Database remains usable
 dbh.users.create_index("username", background=True)
 
+==========================================================
+Location-based Apps with MongoDB: GeoSpatial Indexing
+==========================================================
+Once the documents in your collection have their location properties correctly formed,
+we can create the geospatial index. As with btree indexes, geospatial indexes in Mon-
+goDB are created with PyMongo’s Collection.create_index() method. Due to the one-
+geospatial-index-per-collection limitation in MongoDB versions up to and including
+1.8.x, if you are planning to query by other properties in addition to the location prop-
+erty, you can make your geospatial index a compound index. For exmaple, if you know
+that you will be searching your collection by both “username” and “user_location”
+properties, you could create a compound geo index across both fields. This can help
+to work around the single geospatial index limitation in many cases.
+Returning to our example of documents in a collection called “users” with the location
+property being “user_location”, we would create a geospatial index with the following
+statement:
+# Create geospatial index on "user_location" property.
+dbh.users.create_index([("user_location", pymongo.GEO2D)])
